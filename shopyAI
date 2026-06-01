@@ -1,0 +1,47 @@
+py -3.11 -c "
+import os
+os.makedirs('routes', exist_ok=True)
+
+files = {
+'main.py': '''from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from database import init_db
+from routes import whatsapp, cctv, dashboard
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    print(\"ShopyAI Ready!\")
+    yield
+
+app = FastAPI(title=\"ShopyAI\", version=\"1.0.0\", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=[\"\"], allow_methods=[\"\"], allow_headers=[\"*\"])
+app.include_router(whatsapp.router, prefix=\"/whatsapp\", tags=[\"WhatsApp\"])
+app.include_router(cctv.router, prefix=\"/cctv\", tags=[\"CCTV\"])
+app.include_router(dashboard.router, prefix=\"/dashboard\", tags=[\"Dashboard\"])
+
+@app.get(\"/\")
+async def root():
+    return {\"status\": \"ShopyAI chal raha hai!\"}
+''',
+'config.py': '''from pydantic_settings import BaseSettings
+class Settings(BaseSettings):
+    WHATSAPP_TOKEN: str = \"your_token\"
+    WHATSAPP_PHONE_ID: str = \"your_phone_id\"
+    WHATSAPP_VERIFY_TOKEN: str = \"shopyai123\"
+    GEMINI_API_KEY: str = \"your_gemini_key\"
+    OWNER_WHATSAPP: str = \"+923001234567\"
+    CCTV_CONFIDENCE_THRESHOLD: float = 0.65
+    CCTV_ALERT_COOLDOWN_SECONDS: int = 60
+    class Config:
+        env_file = \".env\"
+settings = Settings()
+''',
+'routes/_init_.py': '',
+}
+
+for path, code in files.items():
+    open(path, 'w').write(code)
+
+print('FILES BAN GAYI!')
